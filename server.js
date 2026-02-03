@@ -45,20 +45,19 @@ app.get("/proxy", async (req, res) => {
     return res.status(400).send("Invalid URL");
   }
 
-  const response = await fetch(targetUrl.href, {
-    headers: { "User-Agent": "Mozilla/5.0", "Accept": "*/*" }
-  });
+  try {
+    const response = await fetch(targetUrl.href, {
+      headers: { "User-Agent": "Mozilla/5.0", "Accept": "*/*" }
+    });
 
-  const type = response.headers.get("content-type") || "";
+    const contentType = response.headers.get("content-type") || "";
+    res.set("Content-Type", contentType);
 
-  /* =====================
-     HTML HANDLING
-     ===================== */
-  if (type.includes("text/html")) {
-    let html = await response.text();
+    if (contentType.includes("text/html")) {
+      let html = await response.text();
 
-    const PROXY = `/proxy?url=`;
-    const inject = `
+      const PROXY = `/proxy?url=`;
+      const inject = `
 <script>
 (() => {
   const wrap = url => {
@@ -80,25 +79,24 @@ app.get("/proxy", async (req, res) => {
 })();
 </script>`;
 
-    html = html.replace(/<head>/i, `<head>${inject}`);
-    html = html.replace(/(href|src|action)=["'](https?:\/\/[^"']+)["']/gi, `$1="${PROXY}$2"`);
-    html = html.replace(/(href|src|action)=["']\/([^"']*)["']/gi, `$1="${PROXY}${targetUrl.origin}/$2"`);
+      html = html.replace(/<head>/i, `<head>${inject}`);
+      html = html.replace(/(href|src|action)=["'](https?:\/\/[^"']+)["']/gi, `$1="${PROXY}$2"`);
+      html = html.replace(/(href|src|action)=["']\/([^"']*)["']/gi, `$1="${PROXY}${targetUrl.origin}/$2"`);
 
-    res.set("Content-Type", "text/html");
-    return res.send(html);
+      return res.send(html);
+    }
+
+    // Everything else: send as a Buffer
+    const buffer = Buffer.from(await response.arrayBuffer());
+    return res.send(buffer);
+
+  } catch (err) {
+    console.error("Proxy fetch error:", err);
+    return res.status(500).send("Error fetching target URL");
   }
-
-  /* =====================
-     EVERYTHING ELSE
-     ===================== */
-  const buffer = Buffer.from(await response.arrayBuffer());
-  res.set("Content-Type", type);
-  res.send(buffer);
 });
 
 /* =====================
    START SERVER
    ===================== */
-app.listen(PORT, () => {
-  console.log("Server running on port", PORT);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
