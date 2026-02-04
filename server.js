@@ -83,11 +83,11 @@ app.get("/", (req, res) => {
       }
     }
 
-    // STARFIELD PARTICLE EFFECT
+    // LIGHTWEIGHT STARFIELD PARTICLE EFFECT
     const canvas = document.getElementById('starfield');
     const ctx = canvas.getContext('2d');
     let stars = [];
-    const numStars = 150;
+    const numStars = 80; // fewer stars for performance
 
     function resizeCanvas() {
       canvas.width = window.innerWidth;
@@ -109,13 +109,13 @@ app.get("/", (req, res) => {
     }
 
     function moveStars() {
-      for (let i = 0; i < stars.length; i++) {
-        stars[i].z -= 2;
-        if (stars[i].z <= 0) {
-          stars[i].z = canvas.width;
-          stars[i].x = Math.random() * canvas.width;
-          stars[i].y = Math.random() * canvas.height;
-          stars[i].o = Math.random();
+      for (let star of stars) {
+        star.z -= 1.5; // slower speed
+        if (star.z <= 0) {
+          star.z = canvas.width;
+          star.x = Math.random() * canvas.width;
+          star.y = Math.random() * canvas.height;
+          star.o = Math.random();
         }
       }
     }
@@ -124,12 +124,11 @@ app.get("/", (req, res) => {
       ctx.fillStyle = "#0f172a";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = "white";
-      for (let i = 0; i < stars.length; i++) {
-        const star = stars[i];
-        const k = 128.0 / star.z;
-        const x = (star.x - canvas.width / 2) * k + canvas.width / 2;
-        const y = (star.y - canvas.height / 2) * k + canvas.height / 2;
-        const size = (1 - star.z / canvas.width) * 2;
+      for (let star of stars) {
+        const k = 128 / star.z;
+        const x = (star.x - canvas.width/2) * k + canvas.width/2;
+        const y = (star.y - canvas.height/2) * k + canvas.height/2;
+        const size = (1 - star.z/canvas.width) * 2;
         ctx.globalAlpha = star.o;
         ctx.fillRect(x, y, size, size);
       }
@@ -148,4 +147,3 @@ app.get("/", (req, res) => {
 </body>
 </html>`);
 });
-
