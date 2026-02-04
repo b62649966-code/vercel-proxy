@@ -1,12 +1,3 @@
-import express from "express";
-import fetch from "node-fetch";
-
-const app = express();
-const PORT = process.env.PORT || 8080;
-
-/* =====================
-   HOMEPAGE
-   ===================== */
 app.get("/", (req, res) => {
   res.send(`<!DOCTYPE html>
 <html>
@@ -16,27 +7,21 @@ app.get("/", (req, res) => {
   <style>
     body {
       font-family: system-ui;
-      background: radial-gradient(circle at top, #0f172a 0%, #020617 100%);
+      margin: 0;
+      overflow: hidden;
+      background: #0f172a;
       color: white;
       display: flex;
       align-items: center;
       justify-content: center;
       height: 100vh;
-      margin: 0;
-      overflow: hidden;
+      position: relative;
     }
-    body::before {
-      content: "";
+    canvas {
       position: absolute;
-      width: 200%;
-      height: 200%;
-      background: url('https://i.ibb.co/0F1N9G5/stars.png') repeat;
-      animation: moveStars 100s linear infinite;
+      top: 0;
+      left: 0;
       z-index: 0;
-    }
-    @keyframes moveStars {
-      0% { transform: translate(0,0); }
-      100% { transform: translate(-50%, -50%); }
     }
     .card {
       position: relative;
@@ -80,6 +65,7 @@ app.get("/", (req, res) => {
   </style>
 </head>
 <body>
+  <canvas id="starfield"></canvas>
   <div class="card">
     <h2>WGs+</h2>
     <form action="/proxy" onsubmit="addHttps()">
@@ -96,66 +82,70 @@ app.get("/", (req, res) => {
         input.value = 'https://' + input.value;
       }
     }
+
+    // STARFIELD PARTICLE EFFECT
+    const canvas = document.getElementById('starfield');
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+    const numStars = 150;
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function createStars() {
+      stars = [];
+      for (let i = 0; i < numStars; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          z: Math.random() * canvas.width,
+          o: Math.random()
+        });
+      }
+    }
+
+    function moveStars() {
+      for (let i = 0; i < stars.length; i++) {
+        stars[i].z -= 2;
+        if (stars[i].z <= 0) {
+          stars[i].z = canvas.width;
+          stars[i].x = Math.random() * canvas.width;
+          stars[i].y = Math.random() * canvas.height;
+          stars[i].o = Math.random();
+        }
+      }
+    }
+
+    function drawStars() {
+      ctx.fillStyle = "#0f172a";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "white";
+      for (let i = 0; i < stars.length; i++) {
+        const star = stars[i];
+        const k = 128.0 / star.z;
+        const x = (star.x - canvas.width / 2) * k + canvas.width / 2;
+        const y = (star.y - canvas.height / 2) * k + canvas.height / 2;
+        const size = (1 - star.z / canvas.width) * 2;
+        ctx.globalAlpha = star.o;
+        ctx.fillRect(x, y, size, size);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function animate() {
+      moveStars();
+      drawStars();
+      requestAnimationFrame(animate);
+    }
+
+    createStars();
+    animate();
   </script>
 </body>
 </html>`);
 });
 
-/* =====================
-   PROXY ROUTE
-   ===================== */
-app.get("/proxy", async (req, res) => {
-  const target = req.query.url;
-  if (!target) return res.status(400).send("Missing URL");
-
-  let targetUrl;
-  try {
-    targetUrl = new URL(target);
-  } catch {
-    return res.status(400).send("Invalid URL");
-  }
-
-  try {
-    const response = await fetch(targetUrl.href, {
-      headers: { "User-Agent": "Mozilla/5.0", "Accept": "*/*" }
-    });
-
-    const type = response.headers.get("content-type") || "";
-    res.set("Content-Type", type);
-
-    if (type.includes("text/html")) {
-      let html = await response.text();
-
-      const PROXY = `/proxy?url=`;
-      const inject = `
-<script>
-(() => {
-  const wrap = url => { try { return PROXY + encodeURIComponent(new URL(url, location.href).href); } catch { return url; } };
-  history.pushState = new Proxy(history.pushState, { apply(t,a,args){ if(args[2]) args[2]=wrap(args[2]); return Reflect.apply(t,a,args); } });
-  history.replaceState = new Proxy(history.replaceState, { apply(t,a,args){ if(args[2]) args[2]=wrap(args[2]); return Reflect.apply(t,a,args); } });
-  window.fetch = new Proxy(window.fetch, { apply(t,a,args){ args[0]=wrap(args[0]); return Reflect.apply(t,a,args); } });
-  const open = XMLHttpRequest.prototype.open;
-  XMLHttpRequest.prototype.open = function(m,u){ return open.call(this,m,wrap(u)); }
-})();
-</script>`;
-
-      html = html.replace(/<head>/i, `<head>${inject}`);
-      html = html.replace(/(href|src|action)=["'](https?:\/\/[^"']+)["']/gi, `$1="${PROXY}$2"`);
-      html = html.replace(/(href|src|action)=["']\/([^"']*)["']/gi, `$1="${PROXY}${targetUrl.origin}/$2"`);
-
-      return res.send(html);
-    }
-
-    // Other content types (images, CSS, JS)
-    response.body.pipe(res);
-
-  } catch (err) {
-    console.error("Proxy fetch error:", err);
-    return res.status(500).send("Error fetching target URL");
-  }
-});
-
-/* =====================
-   START SERVER
-   ===================== */
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
