@@ -56,9 +56,6 @@ app.get("/", (req, res) => {
     button:hover {
       background: #2563eb;
     }
-    h2 {
-      margin-bottom: 20px;
-    }
   </style>
 </head>
 <body>
@@ -66,7 +63,7 @@ app.get("/", (req, res) => {
     <h2>WGs+</h2>
     <form id="proxyForm" action="/proxy">
       <input id="urlInput" name="url" placeholder="Enter website URL" required>
-      <button>Go</button>
+      <button type="submit">Go</button>
     </form>
   </div>
 
@@ -76,11 +73,9 @@ app.get("/", (req, res) => {
 
     form.addEventListener("submit", (e) => {
       e.preventDefault();
-
       if (!/^https?:\\/\\//i.test(input.value)) {
         input.value = "https://" + input.value;
       }
-
       form.submit();
     });
   </script>
@@ -104,7 +99,10 @@ app.get("/proxy", async (req, res) => {
 
   try {
     const response = await fetch(targetUrl.href, {
-      headers: { "User-Agent": "Mozilla/5.0", "Accept": "*/*" }
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+        "Accept": "*/*"
+      }
     });
 
     const type = response.headers.get("content-type") || "";
@@ -112,8 +110,8 @@ app.get("/proxy", async (req, res) => {
 
     if (type.includes("text/html")) {
       let html = await response.text();
+      const PROXY = "/proxy?url=";
 
-      const PROXY = `/proxy?url=`;
       const inject = `
 <style>
 #proxy-back {
@@ -140,7 +138,7 @@ app.get("/proxy", async (req, res) => {
 (() => {
   const wrap = url => {
     try {
-      return PROXY + encodeURIComponent(new URL(url, location.href).href);
+      return "${PROXY}" + encodeURIComponent(new URL(url, location.href).href);
     } catch {
       return url;
     }
@@ -175,22 +173,31 @@ app.get("/proxy", async (req, res) => {
 </script>`;
 
       html = html.replace(/<head>/i, `<head>${inject}`);
-      html = html.replace(/(href|src|action)=["'](https?:\\/\\/[^"']+)["']/gi, `$1="${PROXY}$2"`);
-      html = html.replace(/(href|src|action)=["']\\/([^"']*)["']/gi, `$1="${PROXY}${targetUrl.origin}/$2"`);
+      html = html.replace(
+        /(href|src|action)=["'](https?:\/\/[^"']+)["']/gi,
+        `$1="${PROXY}$2"`
+      );
+      html = html.replace(
+        /(href|src|action)=["']\/([^"']*)["']/gi,
+        `$1="${PROXY}${targetUrl.origin}/$2"`
+      );
 
       return res.send(html);
     }
 
-    response.body.pipe(res);
+    // non-HTML (images, js, css)
+    res.send(Buffer.from(await response.arrayBuffer()));
 
   } catch (err) {
     console.error("Proxy fetch error:", err);
-    return res.status(500).send("Error fetching target URL");
+    res.status(500).send("Error fetching target URL");
   }
 });
 
 /* =====================
    START SERVER
    ===================== */
-app.listen(PORT, () => console.log(\`Server running on port \${PORT}\`));
+app.listen(PORT, () => {
+  console.log("Server running on port " + PORT);
+});
 
