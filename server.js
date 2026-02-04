@@ -1,22 +1,23 @@
 import express from "express";
+import fetch from "node-fetch";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 /* =====================
-   MAIN WEBSITE
+   HOMEPAGE
    ===================== */
 app.get("/", (req, res) => {
   res.send(`<!DOCTYPE html>
 <html>
 <head>
-  <title>My Website</title>
+  <title>Web Proxy</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body { font-family: system-ui; background:#0f172a; color:white; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; }
     .card { background:#020617; padding:30px; border-radius:14px; width:400px; }
     input, button { width:100%; padding:12px; border-radius:8px; border:none; }
-    button { margin-top:10px; background:#3b82f6; color:white; font-weight:bold; margin-top:10px; }
+    button { margin-top:10px; background:#3b82f6; color:white; font-weight:bold; }
   </style>
 </head>
 <body>
@@ -53,9 +54,7 @@ app.get("/proxy", async (req, res) => {
     const type = response.headers.get("content-type") || "";
     res.set("Content-Type", type);
 
-    /* =====================
-       HTML HANDLING
-       ===================== */
+    /* HTML pages */
     if (type.includes("text/html")) {
       let html = await response.text();
 
@@ -63,20 +62,10 @@ app.get("/proxy", async (req, res) => {
       const inject = `
 <script>
 (() => {
-  const wrap = url => {
-    try { return PROXY + encodeURIComponent(new URL(url, location.href).href); }
-    catch { return url; }
-  };
-
-  history.pushState = new Proxy(history.pushState, {
-    apply(t,a,args){ if(args[2]) args[2]=wrap(args[2]); return Reflect.apply(t,a,args); }
-  });
-  history.replaceState = new Proxy(history.replaceState, {
-    apply(t,a,args){ if(args[2]) args[2]=wrap(args[2]); return Reflect.apply(t,a,args); }
-  });
-  window.fetch = new Proxy(window.fetch, {
-    apply(t,a,args){ args[0]=wrap(args[0]); return Reflect.apply(t,a,args); }
-  });
+  const wrap = url => { try { return PROXY + encodeURIComponent(new URL(url, location.href).href); } catch { return url; } };
+  history.pushState = new Proxy(history.pushState, { apply(t,a,args){ if(args[2]) args[2]=wrap(args[2]); return Reflect.apply(t,a,args); } });
+  history.replaceState = new Proxy(history.replaceState, { apply(t,a,args){ if(args[2]) args[2]=wrap(args[2]); return Reflect.apply(t,a,args); } });
+  window.fetch = new Proxy(window.fetch, { apply(t,a,args){ args[0]=wrap(args[0]); return Reflect.apply(t,a,args); } });
   const open = XMLHttpRequest.prototype.open;
   XMLHttpRequest.prototype.open = function(m,u){ return open.call(this,m,wrap(u)); }
 })();
@@ -89,11 +78,8 @@ app.get("/proxy", async (req, res) => {
       return res.send(html);
     }
 
-    /* =====================
-       EVERYTHING ELSE
-       ===================== */
-    const buffer = Buffer.from(await response.arrayBuffer());
-    return res.send(buffer);
+    /* Other content types (images, CSS, JS) */
+    response.body.pipe(res);
 
   } catch (err) {
     console.error("Proxy fetch error:", err);
@@ -104,6 +90,5 @@ app.get("/proxy", async (req, res) => {
 /* =====================
    START SERVER
    ===================== */
-app.listen(PORT, () => {
-  console.log("Server running on port", PORT);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
