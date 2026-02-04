@@ -9,20 +9,27 @@ app.get("/", (req, res) => {
       font-family: system-ui;
       margin: 0;
       overflow: hidden;
-      background: #0f172a;
-      color: white;
+      height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 100vh;
-      position: relative;
+      background: radial-gradient(ellipse at bottom, #0f172a 0%, #020617 100%);
+      color: white;
     }
-    canvas {
+
+    /* Starfield with pseudo-elements */
+    body::before {
+      content: "";
       position: absolute;
       top: 0;
       left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('https://i.ibb.co/0F1N9G5/stars.png') repeat;
+      opacity: 0.3;
       z-index: 0;
     }
+
     .card {
       position: relative;
       z-index: 1;
@@ -33,6 +40,7 @@ app.get("/", (req, res) => {
       text-align: center;
       box-shadow: 0 8px 20px rgba(0,0,0,0.5);
     }
+
     input, button {
       width: 100%;
       padding: 14px;
@@ -41,13 +49,16 @@ app.get("/", (req, res) => {
       margin-top: 10px;
       font-size: 16px;
     }
+
     input {
       background: #1e293b;
       color: white;
     }
+
     input::placeholder {
       color: #94a3b8;
     }
+
     button {
       background: #3b82f6;
       color: white;
@@ -55,9 +66,11 @@ app.get("/", (req, res) => {
       cursor: pointer;
       transition: background 0.2s;
     }
+
     button:hover {
       background: #2563eb;
     }
+
     h2 {
       margin-bottom: 20px;
       font-family: 'Orbitron', sans-serif;
@@ -65,7 +78,6 @@ app.get("/", (req, res) => {
   </style>
 </head>
 <body>
-  <canvas id="starfield"></canvas>
   <div class="card">
     <h2>WGs+</h2>
     <form action="/proxy" onsubmit="addHttps()">
@@ -82,67 +94,6 @@ app.get("/", (req, res) => {
         input.value = 'https://' + input.value;
       }
     }
-
-    // LIGHTWEIGHT STARFIELD PARTICLE EFFECT
-    const canvas = document.getElementById('starfield');
-    const ctx = canvas.getContext('2d');
-    let stars = [];
-    const numStars = 80; // fewer stars for performance
-
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    function createStars() {
-      stars = [];
-      for (let i = 0; i < numStars; i++) {
-        stars.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          z: Math.random() * canvas.width,
-          o: Math.random()
-        });
-      }
-    }
-
-    function moveStars() {
-      for (let star of stars) {
-        star.z -= 1.5; // slower speed
-        if (star.z <= 0) {
-          star.z = canvas.width;
-          star.x = Math.random() * canvas.width;
-          star.y = Math.random() * canvas.height;
-          star.o = Math.random();
-        }
-      }
-    }
-
-    function drawStars() {
-      ctx.fillStyle = "#0f172a";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "white";
-      for (let star of stars) {
-        const k = 128 / star.z;
-        const x = (star.x - canvas.width/2) * k + canvas.width/2;
-        const y = (star.y - canvas.height/2) * k + canvas.height/2;
-        const size = (1 - star.z/canvas.width) * 2;
-        ctx.globalAlpha = star.o;
-        ctx.fillRect(x, y, size, size);
-      }
-      ctx.globalAlpha = 1;
-    }
-
-    function animate() {
-      moveStars();
-      drawStars();
-      requestAnimationFrame(animate);
-    }
-
-    createStars();
-    animate();
   </script>
 </body>
 </html>`);
