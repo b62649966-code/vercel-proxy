@@ -11,21 +11,60 @@ app.get("/", (req, res) => {
   res.send(`<!DOCTYPE html>
 <html>
 <head>
-  <title>Web Proxy</title>
+  <title>WGs+</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { font-family: system-ui; background:#0f172a; color:white; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; }
-    .card { background:#020617; padding:30px; border-radius:14px; width:400px; }
-    input, button { width:100%; padding:12px; border-radius:8px; border:none; }
-    button { margin-top:10px; background:#3b82f6; color:white; font-weight:bold; }
+    body {
+      font-family: system-ui;
+      background: #0f172a;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: #020617;
+      padding: 40px;
+      border-radius: 16px;
+      width: 400px;
+      text-align: center;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+    input, button {
+      width: 100%;
+      padding: 14px;
+      border-radius: 8px;
+      border: none;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+    input {
+      background: #1e293b;
+      color: white;
+    }
+    input::placeholder {
+      color: #94a3b8;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #2563eb;
+    }
   </style>
 </head>
 <body>
   <div class="card">
-    <h2>Web Proxy</h2>
+    <h2>WGs+</h2>
     <form action="/proxy">
-      <input name="url" placeholder="https://example.com" required>
-      <button>Open via Proxy</button>
+      <input name="url" placeholder="Enter website URL" required>
+      <button>Go</button>
     </form>
   </div>
 </body>
