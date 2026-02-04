@@ -16,21 +16,37 @@ app.get("/", (req, res) => {
   <style>
     body {
       font-family: system-ui;
-      background: #0f172a;
+      background: radial-gradient(circle at top, #0f172a 0%, #020617 100%);
       color: white;
       display: flex;
       align-items: center;
       justify-content: center;
       height: 100vh;
       margin: 0;
+      overflow: hidden;
+    }
+    body::before {
+      content: "";
+      position: absolute;
+      width: 200%;
+      height: 200%;
+      background: url('https://i.ibb.co/0F1N9G5/stars.png') repeat;
+      animation: moveStars 100s linear infinite;
+      z-index: 0;
+    }
+    @keyframes moveStars {
+      0% { transform: translate(0,0); }
+      100% { transform: translate(-50%, -50%); }
     }
     .card {
-      background: #020617;
+      position: relative;
+      z-index: 1;
+      background: rgba(2, 6, 23, 0.85);
       padding: 40px;
       border-radius: 16px;
       width: 400px;
       text-align: center;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.5);
     }
     input, button {
       width: 100%;
@@ -57,16 +73,30 @@ app.get("/", (req, res) => {
     button:hover {
       background: #2563eb;
     }
+    h2 {
+      margin-bottom: 20px;
+      font-family: 'Orbitron', sans-serif;
+    }
   </style>
 </head>
 <body>
   <div class="card">
     <h2>WGs+</h2>
-    <form action="/proxy">
-      <input name="url" placeholder="Enter website URL" required>
+    <form action="/proxy" onsubmit="addHttps()">
+      <input id="urlInput" name="url" placeholder="Enter website URL" required>
       <button>Go</button>
     </form>
   </div>
+
+  <script>
+    // Prepend https:// if not already present
+    function addHttps() {
+      const input = document.getElementById('urlInput');
+      if (!/^https?:\/\//i.test(input.value)) {
+        input.value = 'https://' + input.value;
+      }
+    }
+  </script>
 </body>
 </html>`);
 });
