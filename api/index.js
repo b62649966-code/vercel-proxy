@@ -162,7 +162,7 @@ app.get("/proxy", async (req, res) => {
     res.send(buffer);
 
   } catch (err) {
-    console.error("Proxy error:", err);
+    console.error(err);
     res.status(500).send("Error fetching target URL");
   }
 });
