@@ -1,95 +1,135 @@
-import express from "express";
 import fetch from "node-fetch";
 
-const app = express();
+export default async function handler(req, res) {
+  const reqUrl = new URL(req.url, `https://${req.headers.host}`);
+  const target = reqUrl.searchParams.get("url");
 
-/* =====================
-   ROOT REDIRECT
-   ===================== */
-app.get("/", (req, res) => {
-  // Redirect / to /api so homepage loads
-  res.redirect("/api");
-});
-
-/* =====================
-   HOMEPAGE
-   ===================== */
-app.get("/api", (req, res) => {
-  res.send(`<!DOCTYPE html>
+  /* =====================
+     HOMEPAGE
+     ===================== */
+  if (!target) {
+    return res
+      .status(200)
+      .setHeader("Content-Type", "text/html")
+      .send(`<!DOCTYPE html>
 <html>
 <head>
-  <title>WGs+</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body { font-family: system-ui; background: black; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-    .card { background: #020617; padding: 40px; border-radius: 16px; width: 400px; text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.7); }
-    input, button { width: 100%; padding: 14px; border-radius: 8px; border: none; margin-top: 10px; font-size: 16px; }
-    input { background: #1e293b; color: white; }
-    button { background: #3b82f6; color: white; font-weight: bold; cursor: pointer; }
-  </style>
+<title>Web Proxy</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body {
+  margin: 0;
+  font-family: system-ui;
+  background: #0f172a;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+.card {
+  background: #020617;
+  padding: 30px;
+  border-radius: 14px;
+  width: 400px;
+}
+input, button {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+}
+button {
+  margin-top: 10px;
+  background: #3b82f6;
+  color: white;
+  font-weight: bold;
+}
+</style>
 </head>
 <body>
-  <div class="card">
-    <h2>WGs+</h2>
-    <form id="proxyForm" action="/api/proxy">
-      <input id="urlInput" name="url" placeholder="Enter website URL" required>
-      <button type="submit">Go</button>
-    </form>
-  </div>
-  <script>
-    const form = document.getElementById("proxyForm");
-    const input = document.getElementById("urlInput");
-    form.addEventListener("submit", e => {
-      e.preventDefault();
-      if (!/^https?:\\/\\//i.test(input.value)) input.value = "https://" + input.value;
-      form.submit();
-    });
-  </script>
+<div class="card">
+  <h2>Web Proxy</h2>
+  <form>
+    <input name="url" placeholder="https://example.com" required>
+    <button>Go</button>
+  </form>
+</div>
 </body>
 </html>`);
-});
+  }
 
-/* =====================
-   PROXY ROUTE
-   ===================== */
-app.get("/api/proxy", async (req, res) => {
-  const target = req.query.url;
-  if (!target) return res.status(400).send("Missing URL");
-
+  /* =====================
+     VALIDATE URL
+     ===================== */
   let targetUrl;
-  try { targetUrl = new URL(target); } 
-  catch { return res.status(400).send("Invalid URL"); }
-
   try {
-    const response = await fetch(targetUrl.href, { headers: { "User-Agent": "Mozilla/5.0", "Accept": "*/*" } });
-    const type = response.headers.get("content-type") || "";
-    res.setHeader("Content-Type", type);
+    targetUrl = new URL(target);
+  } catch {
+    return res.status(400).send("Invalid URL");
+  }
 
-    if (type.includes("text/html")) {
-      let html = await response.text();
-      const PROXY = "/api/proxy?url=";
-      const inject = `
-<style>#proxy-back{position:fixed;top:12px;left:12px;z-index:999999;background:black;color:white;border:1px solid #333;padding:8px 12px;border-radius:6px;cursor:pointer}</style>
-<button id="proxy-back" onclick="history.back()">← Back</button>
+  /* =====================
+     FETCH TARGET
+     ===================== */
+  let response;
+  try {
+    response = await fetch(targetUrl.href, {
+      headers: { "User-Agent": "Mozilla/5.0", Accept: "*/*" },
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).send("Error fetching target URL");
+  }
+
+  const contentType = response.headers.get("content-type") || "";
+
+  /* =====================
+     HTML RESPONSE
+     ===================== */
+  if (contentType.includes("text/html")) {
+    let html = await response.text();
+
+    const inject = `
 <script>
 (() => {
-  const wrap = url => { try { return "${PROXY}" + encodeURIComponent(new URL(url, location.href).href); } catch { return url; } };
+  const PROXY = "${reqUrl.origin}/api?url=";
+  const wrap = url => { try { return PROXY + encodeURIComponent(new URL(url, location.href).href); } catch { return url; } };
+
+  // Patch history
+  history.pushState = new Proxy(history.pushState, { apply(t,a,args){ args[2] = wrap(args[2]); return Reflect.apply(t,a,args); }});
+  history.replaceState = new Proxy(history.replaceState, { apply(t,a,args){ args[2] = wrap(args[2]); return Reflect.apply(t,a,args); }});
+
+  // Patch fetch
   window.fetch = new Proxy(window.fetch, { apply(t,a,args){ args[0]=wrap(args[0]); return Reflect.apply(t,a,args); }});
+
+  // Patch XHR
   const open = XMLHttpRequest.prototype.open;
   XMLHttpRequest.prototype.open = function(m,u){ return open.call(this,m,wrap(u)); };
 })();
 </script>`;
-      html = html.replace(/<head>/i, `<head>${inject}`);
-      html = html.replace(/(href|src|action)=["'](https?:\/\/[^"']+)["']/gi, `$1="${PROXY}$2"`);
-      html = html.replace(/(href|src|action)=["']\/([^"']*)["']/gi, `$1="${PROXY}${targetUrl.origin}/$2"`);
-      return res.send(html);
-    }
 
-    res.send(Buffer.from(await response.arrayBuffer()));
-  } catch(err) { console.error(err); res.status(500).send("Error fetching target URL"); }
-});
+    html = html.replace(/<head>/i, `<head>${inject}`);
+    html = html.replace(
+      /(href|src|action)=["'](https?:\/\/[^"']+)["']/gi,
+      `$1="${reqUrl.origin}/api?url=$2"`
+    );
+    html = html.replace(
+      /(href|src|action)=["']\/([^"']*)["']/gi,
+      `$1="${reqUrl.origin}/api?url=${targetUrl.origin}/$2"`
+    );
 
-/* =====================
-   EXPORT APP
-   ===================== */
-export default app;
+    res.setHeader("Content-Type", "text/html");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    return res.status(200).send(html);
+  }
+
+  /* =====================
+     NON-HTML RESPONSE
+     ===================== */
+  res.setHeader("Content-Type", contentType);
+  res.setHeader("Access-Control-Allow-Origin", "*");
+
+  const buffer = Buffer.from(await response.arrayBuffer());
+  return res.status(200).send(buffer);
+}
