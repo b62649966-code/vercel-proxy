@@ -48,36 +48,10 @@ function injectedUI(home = false) {
   pointer-events: none;
 }
 
-/* ==== Top icon bar ==== */
-#top-bar {
-  display: flex;
-  justify-content: center;
-  gap: 40px;
-  margin-bottom: 50px;
-}
-
-.top-icon {
-  width: 48px;
-  height: 48px;
-  cursor: pointer;
-  border-radius: 12px;
-  transition: transform 0.2s;
-}
-
-.top-icon img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.top-icon:hover {
-  transform: scale(1.1);
-}
-
 /* ==== Search UI ==== */
 body {
   margin: 0;
-  background: #000000;
+  background: #000;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   display: flex;
   flex-direction: column;
@@ -91,7 +65,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 20%;
+  margin-top: 15%;
 }
 
 #search-container input {
@@ -127,6 +101,32 @@ body {
 
 #search-container button:hover {
   background: #2563eb;
+}
+
+/* ==== Icon row under search bar ==== */
+#icon-row {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-top: 30px;
+}
+
+.icon-item {
+  width: 64px;
+  height: 64px;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: transform 0.2s;
+}
+
+.icon-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.icon-item:hover {
+  transform: scale(1.1);
 }
 </style>
 
@@ -177,17 +177,17 @@ export default async function handler(req,res){
 
 ${injectedUI(true)}
 
-<!-- Top icon bar -->
-<div id="top-bar">
-  <a href="" class="top-icon"><img src="https://cdn-icons-png.flaticon.com/512/5968/5968846.png" alt="Roblox"></a>
-  <a href="" class="top-icon"><img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Move"></a>
-  <a href="" class="top-icon"><img src="https://cdn-icons-png.flaticon.com/512/1040/1040255.png" alt="Game"></a>
-</div>
-
-<!-- Google-style search -->
+<!-- Search container -->
 <div id="search-container">
   <input id="urlInput" placeholder="Search or enter URL">
   <button id="searchBtn">Search</button>
+</div>
+
+<!-- Icon row under search bar -->
+<div id="icon-row">
+  <a href="" class="icon-item"><img src="https://cdn-icons-png.flaticon.com/512/5968/5968846.png" alt="Roblox"></a>
+  <a href="" class="icon-item"><img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Movie"></a>
+  <a href="" class="icon-item"><img src="https://cdn-icons-png.flaticon.com/512/1040/1040255.png" alt="Game"></a>
 </div>
 
 <script>
