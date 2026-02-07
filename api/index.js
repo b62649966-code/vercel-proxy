@@ -185,9 +185,9 @@ ${injectedUI(true)}
 
 <!-- Icon row under search bar -->
 <div id="icon-row">
-  <a href="" class="icon-item"><img src="https://cdn-icons-png.flaticon.com/512/5968/5968846.png" alt="Roblox"></a>
-  <a href="" class="icon-item"><img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Movie"></a>
-  <a href="" class="icon-item"><img src="https://cdn-icons-png.flaticon.com/512/1040/1040255.png" alt="Game"></a>
+  <a href="" class="icon-item"><img src="YOUR_ROBLOX_ICON_URL_HERE" alt="Roblox"></a>
+  <a href="" class="icon-item"><img src="YOUR_MOVIE_ICON_URL_HERE" alt="Movie"></a>
+  <a href="" class="icon-item"><img src="YOUR_GAME_ICON_URL_HERE" alt="Game"></a>
 </div>
 
 <script>
