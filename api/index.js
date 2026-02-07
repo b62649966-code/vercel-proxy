@@ -33,7 +33,7 @@ function injectedUI(home = false) {
   font-size: 14px;
   cursor: pointer;
   color: #fff;
-  background: rgba(0,0,0,0.4);
+  background: rgba(255,255,255,0.1);
   padding: 4px 8px;
   border-radius: 6px;
   text-decoration: none;
@@ -52,47 +52,64 @@ function injectedUI(home = false) {
 #top-bar {
   display: flex;
   justify-content: center;
-  gap: 20px;
+  gap: 40px;
   margin-bottom: 50px;
 }
+
 .top-icon {
   width: 48px;
   height: 48px;
   cursor: pointer;
+  border-radius: 12px;
+  transition: transform 0.2s;
+}
+
+.top-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.top-icon:hover {
+  transform: scale(1.1);
 }
 
 /* ==== Search UI ==== */
 body {
   margin: 0;
-  background: #f5f5f7;
+  background: #000000;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: start;
   height: 100vh;
+  color: #fff;
 }
 
 #search-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 15%;
+  margin-top: 20%;
 }
 
 #search-container input {
   width: 480px;
+  max-width: 90%;
   padding: 12px 16px;
   font-size: 17px;
   border-radius: 24px;
-  border: 1px solid #d1d1d6;
+  border: 1px solid #333;
   outline: none;
   transition: all 0.2s;
+  background: #111;
+  color: #fff;
 }
 
 #search-container input:focus {
   border-color: var(--wgs-color);
-  box-shadow: 0 0 10px rgba(59,130,246,0.3);
+  box-shadow: 0 0 10px rgba(59,130,246,0.5);
 }
 
 #search-container button {
