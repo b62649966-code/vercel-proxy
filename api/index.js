@@ -30,10 +30,10 @@ export default async function handler(req, res) {
     <button onclick="go()">Go</button>
   </div>
   <div id="icon-row">
-    <a class="icon-item" href="${PROXY}https://aimbots-16407873.codehs.me/"><img src="https://1000logos.net/wp-content/uploads/2021/05/Roblox-Logo.png" alt="Roblox"></a>
+    <a class="icon-item" href="${PROXY}EMpty/"><img src="https://1000logos.net/wp-content/uploads/2021/05/Roblox-Logo.png" alt="Roblox"></a>
     <a class="icon-item" href="${PROXY}https://www.examplemovie.com"><img src="https://cdn-icons-png.flaticon.com/512/616/616408.png" alt="Movie"></a>
     <a class="icon-item" href="${PROXY}https://www.examplegame.com"><img src="https://cdn-icons-png.flaticon.com/512/3082/3082037.png" alt="Game"></a>
-    <a class="icon-item" href="${PROXY}https://www.yourwgsplusgames.com"><img src="https://cdn-icons-png.flaticon.com/512/1828/1828884.png" alt="WGS+ Games"></a>
+    <a class="icon-item" href="${PROXY}https://linear-maroon-lpc9bycpg2.edgeone.app/"><img src="https://cdn-icons-png.flaticon.com/512/1828/1828884.png" alt="WGS+ Games"></a>
   </div>
 
   <script>
