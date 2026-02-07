@@ -13,12 +13,12 @@ function injectedUI(home = false) {
   --wgs-color: #3b82f6;
 }
 
-/* Animated Logo */
+/* ===== LOGO / HOME ===== */
 #wgs-logo {
   position: fixed;
   top: 14px;
   left: 16px;
-  z-index: 999999;
+  z-index: 1000000;
   font-family: system-ui;
   font-weight: 800;
   font-size: 18px;
@@ -27,7 +27,9 @@ function injectedUI(home = false) {
   text-shadow: 0 0 14px var(--wgs-color);
   animation: float 3s ease-in-out infinite;
   user-select: none;
+  pointer-events: auto;
 }
+
 @keyframes float {
   0%,100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }
@@ -39,14 +41,15 @@ function injectedUI(home = false) {
   left: 16px;
   font-size: 11px;
   opacity: .7;
-  z-index: 999999;
+  z-index: 1000000;
+  pointer-events: none;
 }
 
-/* Particles */
+/* ===== PARTICLES ===== */
 #wgs-canvas {
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: 0;               /* 🔧 FIX */
   pointer-events: none;
 }
 </style>
@@ -69,11 +72,12 @@ function injectedUI(home = false) {
   document.documentElement.style.setProperty("--wgs-color", color);
 
   /* =====================
-     PARTICLES (SAFE)
+     PARTICLES
      ===================== */
   const canvas = document.getElementById("wgs-canvas");
   const ctx = canvas.getContext("2d");
-  let w, h, running = true;
+  let w, h;
+  let running = true;
 
   function resize() {
     w = canvas.width = innerWidth;
@@ -111,59 +115,78 @@ function injectedUI(home = false) {
   draw();
 
   /* =====================
-     TOGGLE + HOME
+     LOGO CONTROLS
      ===================== */
   const logo = document.getElementById("wgs-logo");
   const state = document.getElementById("wgs-state");
-  let clickTimer;
+  let clickTimer = null;
 
-  logo.onclick = () => {
+  logo.addEventListener("click", () => {
     if (clickTimer) return;
     clickTimer = setTimeout(() => {
       running = !running;
       state.textContent = "Particles: " + (running ? "ON" : "OFF");
       if (running) draw();
       clickTimer = null;
-    }, 250);
-  };
+    }, 220);
+  });
 
-  logo.ondblclick = () => {
+  logo.addEventListener("dblclick", () => {
     clearTimeout(clickTimer);
+    clickTimer = null;
     location.href = "/api";
-  };
+  });
 
   /* =====================
-     PROXY SAFETY (NOT HOME)
+     PROXY SAFETY
      ===================== */
   ${home ? "" : `
   const wrap = u => {
-    try { return "${PROXY}" + encodeURIComponent(new URL(u, location.href).href); }
-    catch { return u; }
+    try {
+      return "${PROXY}" + encodeURIComponent(new URL(u, location.href).href);
+    } catch {
+      return u;
+    }
   };
 
   history.pushState = new Proxy(history.pushState, {
-    apply(t,a,args){ if(args[2]) args[2]=wrap(args[2]); return Reflect.apply(t,a,args); }
+    apply(t, a, args) {
+      if (args[2]) args[2] = wrap(args[2]);
+      return Reflect.apply(t, a, args);
+    }
   });
+
   history.replaceState = new Proxy(history.replaceState, {
-    apply(t,a,args){ if(args[2]) args[2]=wrap(args[2]); return Reflect.apply(t,a,args); }
+    apply(t, a, args) {
+      if (args[2]) args[2] = wrap(args[2]);
+      return Reflect.apply(t, a, args);
+    }
   });
+
   window.fetch = new Proxy(window.fetch, {
-    apply(t,a,args){ args[0]=wrap(args[0]); return Reflect.apply(t,a,args); }
+    apply(t, a, args) {
+      args[0] = wrap(args[0]);
+      return Reflect.apply(t, a, args);
+    }
   });
+
   const open = XMLHttpRequest.prototype.open;
-  XMLHttpRequest.prototype.open = function(m,u){ return open.call(this,m,wrap(u)); };
+  XMLHttpRequest.prototype.open = function(m, u) {
+    return open.call(this, m, wrap(u));
+  };
   `}
 })();
 </script>
 `;
 }
 
+/* =====================
+   API HANDLER
+   ===================== */
 export default async function handler(req, res) {
   const { url } = req.query;
 
-  /* =====================
-     HOMEPAGE (FIXED)
-     ===================== */
+  /* ===== HOME ===== */
   if (!url) {
     return res.send(`<!DOCTYPE html>
 <html>
@@ -236,9 +259,7 @@ export default async function handler(req, res) {
 </html>`);
   }
 
-  /* =====================
-     PROXY FETCH
-     ===================== */
+  /* ===== FETCH ===== */
   let target;
   try { target = new URL(url); }
   catch { return res.status(400).send("Invalid URL"); }
