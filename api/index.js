@@ -35,27 +35,16 @@ function injectedUI(home = false) {
   50% { transform: translateY(-5px); }
 }
 
-#wgs-state {
-  position: fixed;
-  top: 42px;
-  left: 16px;
-  font-size: 11px;
-  opacity: .7;
-  z-index: 1000000;
-  pointer-events: none;
-}
-
 /* ===== PARTICLES ===== */
 #wgs-canvas {
   position: fixed;
   inset: 0;
-  z-index: 0;               /* 🔧 FIX */
+  z-index: 0;
   pointer-events: none;
 }
 </style>
 
-<div id="wgs-logo" title="Click = toggle particles | Double click = home">WGs</div>
-<div id="wgs-state">Particles: ON</div>
+<div id="wgs-logo" title="Go Home">WGs</div>
 <canvas id="wgs-canvas"></canvas>
 
 <script>
@@ -72,12 +61,11 @@ function injectedUI(home = false) {
   document.documentElement.style.setProperty("--wgs-color", color);
 
   /* =====================
-     PARTICLES
+     PARTICLES (ALWAYS ON)
      ===================== */
   const canvas = document.getElementById("wgs-canvas");
   const ctx = canvas.getContext("2d");
   let w, h;
-  let running = true;
 
   function resize() {
     w = canvas.width = innerWidth;
@@ -95,7 +83,6 @@ function injectedUI(home = false) {
   }));
 
   function draw() {
-    if (!running) return;
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = color;
     ctx.shadowBlur = 20;
@@ -115,27 +102,11 @@ function injectedUI(home = false) {
   draw();
 
   /* =====================
-     LOGO CONTROLS
+     HOME BUTTON
      ===================== */
-  const logo = document.getElementById("wgs-logo");
-  const state = document.getElementById("wgs-state");
-  let clickTimer = null;
-
-  logo.addEventListener("click", () => {
-    if (clickTimer) return;
-    clickTimer = setTimeout(() => {
-      running = !running;
-      state.textContent = "Particles: " + (running ? "ON" : "OFF");
-      if (running) draw();
-      clickTimer = null;
-    }, 220);
-  });
-
-  logo.addEventListener("dblclick", () => {
-    clearTimeout(clickTimer);
-    clickTimer = null;
+  document.getElementById("wgs-logo").onclick = () => {
     location.href = "/api";
-  });
+  };
 
   /* =====================
      PROXY SAFETY
@@ -186,7 +157,7 @@ function injectedUI(home = false) {
 export default async function handler(req, res) {
   const { url } = req.query;
 
-  /* ===== HOME ===== */
+  /* ===== HOME PAGE ===== */
   if (!url) {
     return res.send(`<!DOCTYPE html>
 <html>
@@ -259,7 +230,7 @@ export default async function handler(req, res) {
 </html>`);
   }
 
-  /* ===== FETCH ===== */
+  /* ===== PROXY FETCH ===== */
   let target;
   try { target = new URL(url); }
   catch { return res.status(400).send("Invalid URL"); }
