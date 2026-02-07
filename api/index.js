@@ -28,10 +28,6 @@ function injectedUI(home = false) {
   pointer-events: auto;
   text-decoration: none;
 }
-@keyframes float {
-  0%,100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
-}
 
 /* ===== PARTICLES ===== */
 #wgs-canvas {
@@ -42,17 +38,23 @@ function injectedUI(home = false) {
 }
 </style>
 
-<a id="wgs-logo" href="/api" title="Go Home">WGs</a>
-<canvas id="wgs-canvas"></canvas>
+${
+  home
+    ? `<a id="wgs-logo" href="/api" title="Go Home">WGs</a>
+       <canvas id="wgs-canvas"></canvas>`
+    : "" // hide button and particles on proxied pages
+}
 
 <script>
 (() => {
-  /* THEME COLOR */
   const meta = document.querySelector('meta[name="theme-color"]');
   const color = meta?.content || getComputedStyle(document.body).color || "#3b82f6";
   document.documentElement.style.setProperty("--wgs-color", color);
 
-  /* PARTICLES */
+  ${
+    home
+      ? `
+  // PARTICLES
   const canvas = document.getElementById("wgs-canvas");
   const ctx = canvas.getContext("2d");
   let w, h;
@@ -87,9 +89,15 @@ function injectedUI(home = false) {
     requestAnimationFrame(draw);
   }
   draw();
+      `
+      : ""
+  }
 
   /* PROXY SAFETY */
-  ${home ? "" : `
+  ${
+    home
+      ? ""
+      : `
   const wrap = u => {
     try { return "${PROXY}" + encodeURIComponent(new URL(u, location.href).href); }
     catch { return u; }
@@ -106,7 +114,8 @@ function injectedUI(home = false) {
   });
   const open = XMLHttpRequest.prototype.open;
   XMLHttpRequest.prototype.open = function(m,u){ return open.call(this,m,wrap(u)); };
-  `}
+  `
+  }
 })();
 </script>
 `;
@@ -158,6 +167,10 @@ export default async function handler(req, res) {
     }
     input { background: #1e293b; color: white; }
     button { background: #3b82f6; color: white; font-weight: bold; cursor: pointer; }
+    #back-btn {
+      margin-top: 12px;
+      background: #64748b;
+    }
   </style>
 </head>
 <body>
@@ -195,7 +208,7 @@ export default async function handler(req, res) {
 
     if (type.includes("text/html")) {
       let html = await r.text();
-      html = html.replace(/<head>/i, "<head>" + injectedUI());
+      html = html.replace(/<head>/i, "<head>" + injectedUI(false));
       html = html
         .replace(/(href|src|action)=["'](https?:\/\/[^"']+)["']/gi, `$1="${PROXY}$2"`)
         .replace(/(href|src|action)=["']\/([^"']*)["']/gi, `$1="${PROXY}${target.origin}/$2"`);
