@@ -16,7 +16,7 @@ export default async function handler(req, res) {
 <style>
 body{
   margin:0;
-  background:#000;
+  background:black;
   color:#00ff9c;
   font-family:monospace;
   overflow:hidden;
@@ -75,10 +75,10 @@ button{
   <div class="controls">
     <select id="engine">
       <option value="basic">Basic Proxy</option>
-      <option value="uv">Ultraviolet</option>
-      <option value="rh">Rammerhead</option>
-      <option value="sw">Service Worker</option>
-      <option value="bare">Bare Server</option>
+      <option value="uv1">Ultraviolet (uv.run)</option>
+      <option value="uv2">Ultraviolet (workers.dev)</option>
+      <option value="cors1">Public Proxy (corsproxy.io)</option>
+      <option value="cors2">Public Proxy (allorigins)</option>
     </select>
     <input id="u" placeholder="enter site (roblox.com)">
     <button onclick="go()">GO</button>
@@ -102,11 +102,22 @@ function buildURL(raw){
   if(!raw.startsWith('http')) raw='https://'+raw;
   const e = engine.value;
 
-  if(e==='basic') return '${BASIC}'+encodeURIComponent(raw);
-  if(e==='uv') return '/uv/service/'+btoa(raw);
-  if(e==='rh') return '/rh/'+encodeURIComponent(raw);
-  if(e==='sw') return '/sw/'+encodeURIComponent(raw);
-  if(e==='bare') return '/bare/'+encodeURIComponent(raw);
+  if(e==='basic')
+    return '${BASIC}'+encodeURIComponent(raw);
+
+  // PUBLIC ULTRAVIOLET
+  if(e==='uv1')
+    return 'https://uv.run/service/'+btoa(raw);
+
+  if(e==='uv2')
+    return 'https://ultraviolet.workers.dev/service/'+btoa(raw);
+
+  // PUBLIC BARE‑STYLE PROXIES
+  if(e==='cors1')
+    return 'https://corsproxy.io/?'+encodeURIComponent(raw);
+
+  if(e==='cors2')
+    return 'https://api.allorigins.win/raw?url='+encodeURIComponent(raw);
 }
 
 function go(){
