@@ -9,9 +9,7 @@ const PROXY = "/api?url=";
 function injectedUI(home = false) {
   return `
 <style>
-:root {
-  --wgs-color: #3b82f6;
-}
+:root { --wgs-color: #3b82f6; }
 
 /* ===== LOGO / HOME ===== */
 #wgs-logo {
@@ -28,8 +26,8 @@ function injectedUI(home = false) {
   animation: float 3s ease-in-out infinite;
   user-select: none;
   pointer-events: auto;
+  text-decoration: none;
 }
-
 @keyframes float {
   0%,100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }
@@ -44,33 +42,22 @@ function injectedUI(home = false) {
 }
 </style>
 
-<div id="wgs-logo" title="Go Home">WGs</div>
+<a id="wgs-logo" href="/api" title="Go Home">WGs</a>
 <canvas id="wgs-canvas"></canvas>
 
 <script>
 (() => {
-  /* =====================
-     THEME COLOR
-     ===================== */
+  /* THEME COLOR */
   const meta = document.querySelector('meta[name="theme-color"]');
-  const color =
-    meta?.content ||
-    getComputedStyle(document.body).color ||
-    "#3b82f6";
-
+  const color = meta?.content || getComputedStyle(document.body).color || "#3b82f6";
   document.documentElement.style.setProperty("--wgs-color", color);
 
-  /* =====================
-     PARTICLES (ALWAYS ON)
-     ===================== */
+  /* PARTICLES */
   const canvas = document.getElementById("wgs-canvas");
   const ctx = canvas.getContext("2d");
   let w, h;
 
-  function resize() {
-    w = canvas.width = innerWidth;
-    h = canvas.height = innerHeight;
-  }
+  function resize() { w = canvas.width = innerWidth; h = canvas.height = innerHeight; }
   resize();
   addEventListener("resize", resize);
 
@@ -94,57 +81,31 @@ function injectedUI(home = false) {
       if (p.x < 0 || p.x > w) p.vx *= -1;
       if (p.y < 0 || p.y > h) p.vy *= -1;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
       ctx.fill();
     }
     requestAnimationFrame(draw);
   }
   draw();
 
-  /* =====================
-     HOME BUTTON
-     ===================== */
-  document.getElementById("wgs-logo").onclick = () => {
-    location.href = "/api";
-  };
-
-  /* =====================
-     PROXY SAFETY
-     ===================== */
+  /* PROXY SAFETY */
   ${home ? "" : `
   const wrap = u => {
-    try {
-      return "${PROXY}" + encodeURIComponent(new URL(u, location.href).href);
-    } catch {
-      return u;
-    }
+    try { return "${PROXY}" + encodeURIComponent(new URL(u, location.href).href); }
+    catch { return u; }
   };
 
   history.pushState = new Proxy(history.pushState, {
-    apply(t, a, args) {
-      if (args[2]) args[2] = wrap(args[2]);
-      return Reflect.apply(t, a, args);
-    }
+    apply(t,a,args){ if(args[2]) args[2]=wrap(args[2]); return Reflect.apply(t,a,args); }
   });
-
   history.replaceState = new Proxy(history.replaceState, {
-    apply(t, a, args) {
-      if (args[2]) args[2] = wrap(args[2]);
-      return Reflect.apply(t, a, args);
-    }
+    apply(t,a,args){ if(args[2]) args[2]=wrap(args[2]); return Reflect.apply(t,a,args); }
   });
-
   window.fetch = new Proxy(window.fetch, {
-    apply(t, a, args) {
-      args[0] = wrap(args[0]);
-      return Reflect.apply(t, a, args);
-    }
+    apply(t,a,args){ args[0]=wrap(args[0]); return Reflect.apply(t,a,args); }
   });
-
   const open = XMLHttpRequest.prototype.open;
-  XMLHttpRequest.prototype.open = function(m, u) {
-    return open.call(this, m, wrap(u));
-  };
+  XMLHttpRequest.prototype.open = function(m,u){ return open.call(this,m,wrap(u)); };
   `}
 })();
 </script>
@@ -195,16 +156,8 @@ export default async function handler(req, res) {
       margin-top: 12px;
       font-size: 15px;
     }
-    input {
-      background: #1e293b;
-      color: white;
-    }
-    button {
-      background: #3b82f6;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-    }
+    input { background: #1e293b; color: white; }
+    button { background: #3b82f6; color: white; font-weight: bold; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -236,10 +189,7 @@ export default async function handler(req, res) {
   catch { return res.status(400).send("Invalid URL"); }
 
   try {
-    const r = await fetch(target.href, {
-      headers: { "User-Agent": "Mozilla/5.0" }
-    });
-
+    const r = await fetch(target.href, { headers: { "User-Agent": "Mozilla/5.0" } });
     const type = r.headers.get("content-type") || "";
     res.setHeader("Content-Type", type);
 
