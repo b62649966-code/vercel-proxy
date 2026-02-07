@@ -26,7 +26,7 @@ function injectedUI(home = false) {
 #back-btn {
   position: fixed;
   top: 14px;
-  left: 16px;
+  left: 70px;
   z-index: 1000000;
   font-family: system-ui;
   font-weight: 600;
@@ -57,7 +57,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: start;
-  height: 100vh;
+  min-height: 100vh;
   color: #fff;
 }
 
@@ -133,7 +133,7 @@ body {
 ${
   home
     ? `<a id="wgs-logo" href="/api">WGs</a><canvas id="wgs-canvas"></canvas>`
-    : `<a id="back-btn" href="/api">Back</a>`
+    : `<a id="back-btn" href="/api">Home</a>`
 }
 
 <script>
@@ -142,9 +142,7 @@ ${
   const color = meta?.content || getComputedStyle(document.body).color || "#3b82f6";
   document.documentElement.style.setProperty("--wgs-color", color);
 
-  ${
-    home
-      ? `
+  ${home ? `
   const canvas = document.getElementById("wgs-canvas");
   const ctx = canvas.getContext("2d");
   let w,h;
@@ -153,58 +151,47 @@ ${
   const particles = Array.from({length:45},()=>({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-0.5)*0.35,vy:(Math.random()-0.5)*0.35,r:Math.random()*2+1}));
   function draw(){ctx.clearRect(0,0,w,h);ctx.fillStyle=color;ctx.shadowBlur=20;ctx.shadowColor=color;for(const p of particles){p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>w)p.vx*=-1;if(p.y<0||p.y>h)p.vy*=-1;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill()}requestAnimationFrame(draw);}
   draw();
-      `
-      : ""
-  }
+  ` : ""}
 })();
 </script>
 `;
 }
 
 export default async function handler(req,res){
-  const {url, game} = req.query;
+  const {url,page} = req.query;
 
-  // If clicking the game icon
-  if(game==="true"){
+  // ==== WGS Games Page ====
+  if(page === "wgs-games"){
     return res.send(`<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WGS Games</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#3b82f6">
 ${injectedUI(false)}
 </head>
 <body>
-<script>
-const FETCH_URL = "https://cdn.jsdelivr.net/gh/gn-math/gn-math-DONTDMCA@main/singlefile.html?t=" + Date.now();
 
-const win = window.open('about:blank', '_blank');
-if(win){
-  fetch(FETCH_URL)
-    .then(r => r.text())
-    .then(html => {
-      try {
-        win.document.open();
-        win.document.write(html.replace(/Gn math/g, "WGS Games"));
-        win.document.body.style.background = "#000";
-        // Add back button
-        const btn = win.document.createElement("a");
-        btn.href = "/";
-        btn.textContent = "Back";
-        btn.id = "back-btn";
-        win.document.body.appendChild(btn);
-        win.document.close();
-      } catch(e){ console.error(e); }
-    })
-    .catch(e => console.error(e));
-}
-</script>
+<h1 style="margin-top:120px; text-align:center;">Welcome to WGS Games</h1>
+<p style="text-align:center; color:#ccc;">Select a game below!</p>
+
+<!-- Example Game Icon -->
+<div id="icon-row" style="margin-top:50px;">
+  <a href="https://example.com/game1" target="_blank" class="icon-item">
+    <img src="https://via.placeholder.com/64" alt="Game 1">
+  </a>
+  <a href="https://example.com/game2" target="_blank" class="icon-item">
+    <img src="https://via.placeholder.com/64" alt="Game 2">
+  </a>
+</div>
+
 </body>
-</html>`);
+</html>
+`);
   }
 
+  // ==== Homepage ====
   if(!url){
-    // Homepage
     return res.send(`<!DOCTYPE html>
 <html>
 <head>
@@ -224,8 +211,9 @@ ${injectedUI(true)}
 
 <!-- Icon row under search bar -->
 <div id="icon-row">
-  <a href="${PROXY}?game=true" class="icon-item"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAM8AAACUCAMAAAADFo1ZAAAAY1BMVEUAAAD///8ICAgEBAQMDAwQEBD7+/umpqbw8PATExODg4NkZGT39/fQ0NAeHh7l5eWOjo7FxcVBQUGzs7N4eHgYGBjb29s6OjpXV1ckJCSfn59JSUm6uroqKiozMzNtbW2Wlpa+3QDLAAAGg0lEQVR4nO1d2YKiMBBUwjUqIuAqOjr6/1+5oKOLs2RM9ZFQrwpJpc90DmYzBZg4SeIkMiO/mChKkiQa+22K6Prbc3nX2xthYyZOKoo6MnHk+u/+v9OVU6dIcQx2r39impSeZNDO3ShNjVEUR85qNvJ0xHlaGObGhjnCPaOpyCgScb6dW4wFOsOGEbPn3p+IvIiDWFLxTSdqubcRIN9+UDPScEomDsTI9Haj0bSoCjtDMWJEaJYh06bi233rXKdrug3E2g28wOgnXMZbdDXKuvZoxpsR+codPWUL6rbzROSjpSjRb+PZlr7K+aTjgVDslY5Ggvj6+g/Nt4+2qEnIBEisjJ7KeY3Z/1rVctuKI/UrtAiFKioZFUL+wuj/0CAUkI5G4yFc27B1YV0PS0e+/eDlWNnpUFDjuUHUHRnPWdsYJAtzwbWth5yAJlBWnvUTcCkBTUE6MzmNm4S29ZCZOkxD23oYiZ6EyqrHIKEp01kH7CAQNyjiWfObHUcYXTns8mZbn/8ovJotIMqOlK90Pp+nu2zb7qUlxXVOpKB8mX9jVRy3bS1aE+IJiObcmvkAZXVcLPesXgzBy3poT5fzV6RllW2WB05HnuClxiQ+6/kIVmXVbFp+QDSsGETan7Yd49Mj3xXZlqt6nJkqzZucbHx61cvLIrtwvB6LD+nZ/Bc+N06rvLi29E6RlZY2FF9v6DwMqrh+knrFCEGk7GLjxufGqVrUf1CHRU+QabtVC3c+PcrT9vMLMiiygGjj8M58/sctNaqdOfnls0xhPj3yIlssa6cUljqDoalbRqJzQ1nVTk0Qcx6aWEHzeUHqlhP55HP+mbwh2Lm1QVQ40ihscXfwD0fHjpH40KJpRnMHd7gmDaQIREvMOeYzd22ElGOT+HxyzKdwbYXEh6SkC475bJy75k0+zfte2+Gcn1K29ZDcwbpi0MmdW6RMUklBq90x+FTuLfris+GYz8K9HQKfhF2pQgFM7wh8KNnOF8d8yi+gczgfSlVzaTGf/Hqt3mpiA0zqCMZAkc9mNd7V4tOc98vj785ii3SOYD/wE/a5z33oTXK+NNb8IUUqPoSpGaFGVtvMZxj4rzYZus3l7og+YAERVm8ulsEvL49/GHu1MUPq24QaD0HfFpauDod+b0vAgegzo5Q2cP92sEWfZjA2W4sM8yXUFs4H17dPy9CvhuZztMz3IPOhODicz9ISYsrB0K+t5gP5H4P7A1zfrOYzCPytTYag+eCTM3gAzhbzSbPBn2zlkhI0H9y/wfpWW8J/ehqYxtUiwwpb5krwbBnm01q6Ok9X5Wl7vv3HJkPXStUDhPwNvsbAZj4PjWrayDrfWzmXDu4g5G+ofA6/LTN+C6qoLN56By7XfeDZMjoCX5xKVXVGmjKzCE9I0c1zVvNxQfb+/azOzfAisc1zuSDHog+tAIcF1IhT6N2BK8OkQ1tYgr22TGucUIHJfEwp1mDy4ZhPipoPafM/xufI4JMjpYMepPo1tozMKYyW2FyBejgDUmoGHfd1km8Q91ghCrdk0EnB5I26fvoBPMVYpUen2uSzQIgBcZKdEk0ViXyArY0HBh1f5oMcF9g3RUkNqOkV7Bd5/w4ya9pfNllVUhbroULvrVtkPtiDcb1cZO/XEX4iB3tF3xFLuLth3XFqdpCYKrRX9P2JNEdyqNvFyd3hoXMFzv5Rsqauz+3CUfWgqSnvGB339EO9Kd6qXgm+k7VBXuBUbnss8t9INeD7WGMsc8r4zyWzh6fL++eH4J1f4J0WGGK/OO1GOYEjxjQB0YPb7aZLI344CcctiU8wb7WSE9Ad5+WmeUkjwKk2+/CoKJ/70O4vXRrxiE/gXIG0a+WlCyqng2+pUdGpXgpsCpmJ3DaldvXBum63GbIpZCYgHqF32HA4Qy8XOXod/m6KJ2SGVlNAEITuEPF/qZgFUleN4YvjKpC7OQ2pXKlB8KD/FG7aFg2EEyAk2gUT3McJXysR+hIR8TtcO3EHFJF8FunvfuAxKFwTGgU0IaMR0cNd9KJ0HVgwjdO63SwMIcXrqYMQSvQaNYl3r63rV43vMKQdJjyHIf2PZRiPN2AbH9/+0LlNd7wpP5+V8CQh482d+rlD3ig66h/w8QUGr582Um/MeC4qKZtq5PezCD0UvzpkgnyNLtZyP1GoL07FGqGo0+RgEy2FkQzxramX5kUTVOP+sVEldPmcXA+S0S/a+oYUo1im7v8XqpIxXvFRMmcAAAAASUVORK5CYII=" alt="Game"></a>
+  <a href="" class="icon-item"><img src="https://via.placeholder.com/64" alt="Roblox"></a>
   <a href="" class="icon-item"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTaGdPRxbzDWLAp2N9pNVPtvAEaWElXZcPasg&s" alt="Movie"></a>
+  <a href="/api?page=wgs-games" class="icon-item"><img src="https://via.placeholder.com/64/000000/ffffff?text=WGS" alt="Games"></a>
 </div>
 
 <script>
@@ -247,7 +235,7 @@ searchInput.addEventListener("keypress", e => {
 </html>`);
   }
 
-  // Proxy fetch
+  // ==== Proxy fetch ====
   let target;
   try{ target=new URL(url); }
   catch{ return res.status(400).send("Invalid URL"); }
