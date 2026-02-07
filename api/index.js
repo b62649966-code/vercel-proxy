@@ -29,6 +29,24 @@ function injectedUI(home = false) {
   text-decoration: none;
 }
 
+/* ===== BACK BUTTON ===== */
+#back-btn {
+  position: fixed;
+  top: 14px;
+  left: 70px;
+  z-index: 1000000;
+  font-family: system-ui;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  color: #fff;
+  background: rgba(0,0,0,0.4);
+  padding: 4px 8px;
+  border-radius: 6px;
+  text-decoration: none;
+  display: none;
+}
+
 /* ===== PARTICLES ===== */
 #wgs-canvas {
   position: fixed;
@@ -42,7 +60,7 @@ ${
   home
     ? `<a id="wgs-logo" href="/api" title="Go Home">WGs</a>
        <canvas id="wgs-canvas"></canvas>`
-    : "" // hide button and particles on proxied pages
+    : `<a id="back-btn" href="/api">Home</a>` // show back button on proxied pages
 }
 
 <script>
@@ -91,30 +109,6 @@ ${
   draw();
       `
       : ""
-  }
-
-  /* PROXY SAFETY */
-  ${
-    home
-      ? ""
-      : `
-  const wrap = u => {
-    try { return "${PROXY}" + encodeURIComponent(new URL(u, location.href).href); }
-    catch { return u; }
-  };
-
-  history.pushState = new Proxy(history.pushState, {
-    apply(t,a,args){ if(args[2]) args[2]=wrap(args[2]); return Reflect.apply(t,a,args); }
-  });
-  history.replaceState = new Proxy(history.replaceState, {
-    apply(t,a,args){ if(args[2]) args[2]=wrap(args[2]); return Reflect.apply(t,a,args); }
-  });
-  window.fetch = new Proxy(window.fetch, {
-    apply(t,a,args){ args[0]=wrap(args[0]); return Reflect.apply(t,a,args); }
-  });
-  const open = XMLHttpRequest.prototype.open;
-  XMLHttpRequest.prototype.open = function(m,u){ return open.call(this,m,wrap(u)); };
-  `
   }
 })();
 </script>
@@ -167,10 +161,6 @@ export default async function handler(req, res) {
     }
     input { background: #1e293b; color: white; }
     button { background: #3b82f6; color: white; font-weight: bold; cursor: pointer; }
-    #back-btn {
-      margin-top: 12px;
-      background: #64748b;
-    }
   </style>
 </head>
 <body>
@@ -208,10 +198,16 @@ export default async function handler(req, res) {
 
     if (type.includes("text/html")) {
       let html = await r.text();
+
+      // Inject UI without breaking JS-heavy sites
       html = html.replace(/<head>/i, "<head>" + injectedUI(false));
-      html = html
-        .replace(/(href|src|action)=["'](https?:\/\/[^"']+)["']/gi, `$1="${PROXY}$2"`)
-        .replace(/(href|src|action)=["']\/([^"']*)["']/gi, `$1="${PROXY}${target.origin}/$2"`);
+
+      // Only rewrite basic links and forms; skip scripts
+      html = html.replace(/<(a|form)\s+([^>]*)(href|action)=["'](https?:\/\/[^"']+)["']/gi,
+        `<$1 $2$3="${PROXY}$4"`);
+      html = html.replace(/<(a|form)\s+([^>]*)(href|action)=["']\/([^"']*)["']/gi,
+        `<$1 $2$3="${PROXY}${target.origin}/$4"`);
+
       return res.send(html);
     }
 
